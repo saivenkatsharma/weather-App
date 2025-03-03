@@ -84,7 +84,7 @@ export default function WeatherDashboard() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
-  const API_KEY = "f58ca6155bfeb64a4698ec99debb1d01"
+  const API_KEY = ""
 
   useEffect(() => {
     fetchWeatherData(city)
