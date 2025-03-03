@@ -1,5 +1,6 @@
 import { Card, CardContent } from "@/components/ui/card"
 import WeatherIcon from "@/components/weather-icon"
+import { Cloud, Droplets, Wind } from "lucide-react"
 
 interface ForecastProps {
   forecast: {
@@ -13,6 +14,16 @@ interface ForecastProps {
       main: string
       description: string
     }
+    wind: {
+      speed: number
+      deg: number
+      gust?: number
+    }
+    precipitation: number
+    humidity: number
+    pressure: number
+    visibility: number
+    clouds: number
   }
 }
 
@@ -37,8 +48,30 @@ export default function ForecastCard({ forecast }: ForecastProps) {
           <span className="font-semibold text-gray-800 dark:text-white">{Math.round(forecast.temp.max)}°</span>
           <span className="text-gray-500 dark:text-gray-400">{Math.round(forecast.temp.min)}°</span>
         </div>
+
+        <div className="grid grid-cols-3 gap-2 mt-3 w-full text-xs text-gray-500 dark:text-gray-400">
+          <div className="flex flex-col items-center">
+            <Wind className="h-4 w-4 text-blue-500" />
+            <span>{Math.round(forecast.wind.speed * 3.6)} km/h</span>
+          </div>
+          <div className="flex flex-col items-center">
+            <Droplets className="h-4 w-4 text-blue-500" />
+            <span>{forecast.humidity}%</span>
+          </div>
+          <div className="flex flex-col items-center">
+            <Cloud className="h-4 w-4 text-blue-500" />
+            <span>{forecast.clouds}%</span>
+          </div>
+        </div>
+
+        <div className="w-full mt-2 pt-2 border-t border-gray-200 dark:border-gray-700">
+          <div className="text-xs text-center text-gray-500 dark:text-gray-400">
+            <p>Precipitation: {forecast.precipitation}%</p>
+            <p>Pressure: {forecast.pressure} hPa</p>
+            <p>Visibility: {Math.round(forecast.visibility / 1000)}km</p>
+          </div>
+        </div>
       </CardContent>
     </Card>
   )
 }
-

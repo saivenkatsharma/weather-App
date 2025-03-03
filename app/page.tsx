@@ -10,22 +10,87 @@ import WeatherIcon from "@/components/weather-icon"
 import ForecastCard from "@/components/forecast-card"
 import AnimatedBackground from "@/components/animated-background"
 import WeatherCursor from "@/components/weather-cursor"
+import WeatherBackground from "@/components/weather-background"
+
+interface WeatherData {
+  name: string;
+  sys: {
+    country: string;
+    sunrise: number;
+    sunset: number;
+  };
+  weather: Array<{
+    id: number;
+    main: string;
+    description: string;
+    icon: string;
+  }>;
+  main: {
+    temp: number;
+    feels_like: number;
+    temp_min: number;
+    temp_max: number;
+    pressure: number;
+    humidity: number;
+    sea_level?: number;
+    grnd_level?: number;
+  };
+  wind: {
+    speed: number;
+    deg: number;
+    gust?: number;
+  };
+  clouds: {
+    all: number;
+  };
+  visibility: number;
+  rain?: {
+    "1h"?: number;
+  };
+  snow?: {
+    "1h"?: number;
+  };
+}
+
+interface ForecastData {
+  date: string;
+  temp: {
+    min: number;
+    max: number;
+  };
+  weather: {
+    id: number;
+    main: string;
+    description: string;
+    icon: string;
+  };
+  wind: {
+    speed: number;
+    deg: number;
+    gust?: number;
+  };
+  precipitation: number;
+  humidity: number;
+  pressure: number;
+  visibility: number;
+  clouds: number;
+}
 
 export default function WeatherDashboard() {
   const [city, setCity] = useState("London")
   const [searchQuery, setSearchQuery] = useState("")
-  const [weather, setWeather] = useState(null)
-  const [forecast, setForecast] = useState(null)
+  const [weather, setWeather] = useState<WeatherData | null>(null)
+  const [forecast, setForecast] = useState<ForecastData[] | null>(null)
   const [loading, setLoading] = useState(true)
-  const [error, setError] = useState(null)
+  const [error, setError] = useState<string | null>(null)
 
-  const API_KEY = "YOUR_API_KEY" // Replace with your OpenWeatherMap API key
+  const API_KEY = "f58ca6155bfeb64a4698ec99debb1d01"
 
   useEffect(() => {
     fetchWeatherData(city)
   }, [city])
 
-  const fetchWeatherData = async (cityName) => {
+  const fetchWeatherData = async (cityName: string) => {
     setLoading(true)
     setError(null)
 
@@ -64,8 +129,8 @@ export default function WeatherDashboard() {
     }
   }
 
-  const processForecastData = (forecastList) => {
-    const dailyData = {}
+  const processForecastData = (forecastList: any[]): ForecastData[] => {
+    const dailyData: { [key: string]: ForecastData } = {}
 
     // Group forecast data by day
     forecastList.forEach((item) => {
@@ -76,6 +141,16 @@ export default function WeatherDashboard() {
           date,
           temp: { min: item.main.temp_min, max: item.main.temp_max },
           weather: item.weather[0],
+          wind: {
+            speed: item.wind.speed,
+            deg: item.wind.deg,
+            gust: item.wind.gust
+          },
+          precipitation: item.pop * 100, // Probability of precipitation as percentage
+          humidity: item.main.humidity,
+          pressure: item.main.pressure,
+          visibility: item.visibility,
+          clouds: item.clouds.all
         }
       } else {
         // Update min/max temperatures
@@ -109,6 +184,7 @@ export default function WeatherDashboard() {
 
   return (
     <div className="min-h-screen bg-transparent p-4 md:p-8 relative">
+      <WeatherBackground weatherCode={weather?.weather[0]?.id} />
       <AnimatedBackground weatherCode={weather?.weather[0]?.id} />
       <WeatherCursor weatherCode={weather?.weather[0]?.id} />
       <div className="max-w-6xl mx-auto relative z-10">
@@ -171,7 +247,7 @@ export default function WeatherDashboard() {
                     <p className="text-gray-600 dark:text-gray-300 capitalize">{weather.weather[0].description}</p>
                     <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
                       Feels like {Math.round(weather.main.feels_like)}°C
-                    </p>
+                    </p> 
                   </div>
 
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -192,15 +268,58 @@ export default function WeatherDashboard() {
                     <div className="bg-white/50 dark:bg-gray-700/50 backdrop-blur-sm p-4 rounded-lg flex flex-col items-center border border-white/20 dark:border-gray-700/30 shadow">
                       <Wind className="h-6 w-6 text-blue-500 mb-2" />
                       <p className="text-sm text-gray-500 dark:text-gray-400">Wind</p>
-                      <p className="font-semibold text-gray-800 dark:text-white">
-                        {Math.round(weather.wind.speed * 3.6)} km/h
-                      </p>
+                      <div className="text-center">
+                        <p className="font-semibold text-gray-800 dark:text-white">
+                          {Math.round(weather.wind.speed * 3.6)} km/h
+                        </p>
+                        <p className="text-xs text-gray-500 dark:text-gray-400">
+                          {weather.wind.gust && `Gust: ${Math.round(weather.wind.gust * 3.6)} km/h`}
+                        </p>
+                      </div>
                     </div>
 
                     <div className="bg-white/50 dark:bg-gray-700/50 backdrop-blur-sm p-4 rounded-lg flex flex-col items-center border border-white/20 dark:border-gray-700/30 shadow">
                       <Cloud className="h-6 w-6 text-blue-500 mb-2" />
-                      <p className="text-sm text-gray-500 dark:text-gray-400">Clouds</p>
-                      <p className="font-semibold text-gray-800 dark:text-white">{weather.clouds.all}%</p>
+                      <p className="text-sm text-gray-500 dark:text-gray-400">Conditions</p>
+                      <div className="text-center">
+                        <p className="font-semibold text-gray-800 dark:text-white">{weather.clouds.all}% clouds</p>
+                        <p className="text-xs text-gray-500 dark:text-gray-400">
+                          Vis: {Math.round(weather.visibility / 1000)}km
+                        </p>
+                        {weather.rain && (
+                          <p className="text-xs text-gray-500 dark:text-gray-400">
+                            Rain: {weather.rain["1h"]}mm
+                          </p>
+                        )}
+                        {weather.snow && (
+                          <p className="text-xs text-gray-500 dark:text-gray-400">
+                            Snow: {weather.snow["1h"]}mm
+                          </p>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="col-span-2 md:col-span-4 bg-white/50 dark:bg-gray-700/50 backdrop-blur-sm p-4 rounded-lg flex flex-col items-center border border-white/20 dark:border-gray-700/30 shadow">
+                      <div className="grid grid-cols-2 gap-4 w-full">
+                        <div className="text-center">
+                          <p className="text-sm text-gray-500 dark:text-gray-400">Pressure</p>
+                          <p className="font-semibold text-gray-800 dark:text-white">{weather.main.pressure} hPa</p>
+                          {weather.main.sea_level && (
+                            <p className="text-xs text-gray-500 dark:text-gray-400">
+                              Sea Level: {weather.main.sea_level} hPa
+                            </p>
+                          )}
+                          {weather.main.grnd_level && (
+                            <p className="text-xs text-gray-500 dark:text-gray-400">
+                              Ground Level: {weather.main.grnd_level} hPa
+                            </p>
+                          )}
+                        </div>
+                        <div className="text-center">
+                          <p className="text-sm text-gray-500 dark:text-gray-400">Wind Direction</p>
+                          <p className="font-semibold text-gray-800 dark:text-white">{weather.wind.deg}°</p>
+                        </div>
+                      </div>
                     </div>
                   </div>
 
@@ -225,12 +344,11 @@ export default function WeatherDashboard() {
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
           {loading
             ? Array(5)
-                .fill(0)
-                .map((_, index) => <Skeleton key={index} className="h-40 w-full" />)
+              .fill(0)
+              .map((_, index) => <Skeleton key={index} className="h-40 w-full" />)
             : forecast && forecast.map((day, index) => <ForecastCard key={index} forecast={day} />)}
         </div>
       </div>
     </div>
   )
 }
-
